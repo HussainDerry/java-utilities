@@ -10,10 +10,6 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Hussain Yahia <h.abbas@qi.iq>
- * @version 1.0
- */
 public class CloneUtilsTest {
 
     @Test
