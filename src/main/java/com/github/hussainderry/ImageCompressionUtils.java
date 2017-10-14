@@ -53,7 +53,7 @@ public class ImageCompressionUtils {
             throw new IllegalArgumentException(NULL_BYTES);
         }
 
-        if(!isCompressionRatioValid(compressedImageQuality)){
+        if(!isValidImageQuality(compressedImageQuality)){
             throw new IllegalArgumentException(ILLEGAL_COMPRESSION_RATIO);
         }
 
@@ -126,7 +126,7 @@ public class ImageCompressionUtils {
         return compressImageBase64(mDecoder.decode(imageBase64), compressedImageQuality);
     }
 
-    private static boolean isCompressionRatioValid(float ratio){
+    private static boolean isValidImageQuality(float ratio){
         return ratio >= 0 && ratio <= 1;
     }
 
