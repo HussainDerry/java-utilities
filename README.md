@@ -1,5 +1,7 @@
 # Java Utilities Module
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/288fbb060ade4282821af1a63c10de64)](https://www.codacy.com/app/hussain.derry/java-utilities?utm_source=github.com&utm_medium=referral&utm_content=HussainDerry/java-utilities&utm_campaign=badger)
+
 Contains helper classes that I find useful every now and then.
 
 ## Classes Summary
