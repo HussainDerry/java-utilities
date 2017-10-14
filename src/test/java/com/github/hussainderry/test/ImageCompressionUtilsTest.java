@@ -12,8 +12,8 @@ import static org.junit.Assert.assertTrue;
 
 public class ImageCompressionUtilsTest {
 
-    private static final String SOURCE_IMAGE_PATH_JPG = "/home/hussain/Pictures/shop1.jpg";
-    private static final String SOURCE_IMAGE_PATH_PNG = "/home/hussain/Pictures/programmer-needs-coffee-to-code-hd-desktop-wallpaper.png";
+    private static final String SOURCE_IMAGE_PATH_JPG = "./test-images/copperwall-darkdots.jpg";
+    private static final String SOURCE_IMAGE_PATH_PNG = "./test-images/programmer-needs-coffee-to-code-hd-desktop-wallpaper.png";
 
     @Test
     public void testValidJpgCompression() throws IOException{
