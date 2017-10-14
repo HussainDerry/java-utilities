@@ -130,12 +130,12 @@ public class ConcurrentCache<K, V> {
         private long lastAccessed;
         private T value;
 
-        Holder(T value){
+        private Holder(T value){
             lastAccessed = System.currentTimeMillis();
             this.value = value;
         }
 
-        T getValue(){
+        private T getValue(){
             lastAccessed = System.currentTimeMillis();
             return this.value;
         }
