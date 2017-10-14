@@ -30,7 +30,7 @@ import java.util.Iterator;
 
 /**
  * Helper class to compress images to JPG for storage
- * @author Hussain Al-Derry <hussain.derry@gmail.com>
+ * @author Hussain Al-Derry
  * */
 public class ImageCompressionUtils {
 
@@ -43,7 +43,7 @@ public class ImageCompressionUtils {
     /**
      * Compresses an Image using the specified compression ratio
      * @param imageBytes The image bytes to compress
-     * @param compressedImageQuality The compressed image quality, must be >= 0 and <= 1
+     * @param compressedImageQuality The compressed image quality, must be between 0 and 1 (inclusive)
      * @return byte array containing the compressed image bytes
      * @throws IllegalStateException if an error occurs
      * @throws IllegalArgumentException if there is an illegal argument
@@ -84,7 +84,7 @@ public class ImageCompressionUtils {
     /**
      * Compresses an Image to JPG using the specified compression ratio
      * @param imageBase64 The image bytes encoded as Base64
-     * @param compressedImageQuality The compressed image quality, must be >= 0 and <= 1
+     * @param compressedImageQuality The compressed image quality, The compressed image quality, must be between 0 and 1 (inclusive)
      * @return byte array containing the compressed image bytes
      * @throws IllegalStateException if an error occurs
      * @throws IllegalArgumentException if there is an illegal argument
@@ -99,7 +99,7 @@ public class ImageCompressionUtils {
     /**
      * Compresses an Image to JPG using the specified compression ratio
      * @param imageBytes The image bytes to compress
-     * @param compressedImageQuality The compressed image quality, must be >= 0 and <= 1
+     * @param compressedImageQuality The compressed image quality, The compressed image quality, must be between 0 and 1 (inclusive)
      * @return Base64 representation of the compressed image
      * @throws IllegalStateException if an error occurs
      * @throws IllegalArgumentException if there is an illegal argument
@@ -114,7 +114,7 @@ public class ImageCompressionUtils {
     /**
      * Compresses an Image to JPG using the specified compression ratio
      * @param imageBase64 The image bytes encoded as Base64
-     * @param compressedImageQuality The compressed image quality, must be >= 0 and <= 1
+     * @param compressedImageQuality The compressed image quality, The compressed image quality, must be between 0 and 1 (inclusive)
      * @return Base64 representation of the compressed image
      * @throws IllegalStateException if an error occurs
      * @throws IllegalArgumentException if there is an illegal argument

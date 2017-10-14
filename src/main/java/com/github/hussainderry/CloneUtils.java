@@ -19,8 +19,7 @@ import java.io.*;
 
 /**
  * Contains helper method to deep clone serializable objects
- * @author Hussain Al-Derry <hussain.derry@gmail.com>
- * @version 1.0
+ * @author Hussain Al-Derry
  */
 public class CloneUtils {
 

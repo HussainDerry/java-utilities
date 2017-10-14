@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Cache implementation with a periodic memory clean up process.
- * @author Hussain Al-Derry <hussain.derry@gmail.com>
+ * @author Hussain Al-Derry
  * @version 1.0
  */
 public class ConcurrentCache<K, V> {
@@ -59,6 +59,7 @@ public class ConcurrentCache<K, V> {
      * Puts the specified value in the cache, if a value is already mapped to the specified key that value is returned.
      * @param key The key which the specified value is associated with.
      * @param value The value to be cached.
+     * @return The old value corresponding to the provided key
      * */
     public V putIfAbsent(K key, V value){
         return mMap.putIfAbsent(key, new Holder<>(value)).getValue();
@@ -67,6 +68,7 @@ public class ConcurrentCache<K, V> {
     /**
      * Returns the value associated with the specified key, if no mapping is found the method returns null.
      * @param key The key associated with the value to be returned.
+     * @return The value corresponding to the key if it exists, else null
      * */
     public V get(K key){
         Holder<V> mHolder = mMap.get(key);
@@ -89,7 +91,7 @@ public class ConcurrentCache<K, V> {
     /**
      * Removes the value associated with the specified key.
      * @param key The key associated with the value to be removed.
-     * @return
+     * @return If the value exists it's returned and removed, else null
      * */
     public V remove(K key){
         Holder<V> mHolder = mMap.remove(key);
@@ -125,8 +127,8 @@ public class ConcurrentCache<K, V> {
      * */
     private class Holder<T>{
 
-        long lastAccessed;
-        T value;
+        private long lastAccessed;
+        private T value;
 
         Holder(T value){
             lastAccessed = System.currentTimeMillis();

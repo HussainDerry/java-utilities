@@ -17,7 +17,7 @@ package com.github.hussainderry;
 
 /**
  * A helper class to check number validity using the Luhn algorithm.
- * @author Hussain Al-Derry <hussain.derry@gmail.com>
+ * @author Hussain Al-Derry
  */
 public class LuhnChecker {
 
