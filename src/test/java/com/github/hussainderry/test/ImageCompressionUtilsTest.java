@@ -8,7 +8,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import static com.github.hussainderry.ImageCompressionUtils.compressImage;
-import static com.github.hussainderry.ImageCompressionUtils.compressImageBase64;
 import static org.junit.Assert.assertTrue;
 
 public class ImageCompressionUtilsTest {
