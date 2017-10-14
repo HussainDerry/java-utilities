@@ -25,7 +25,7 @@ String compressedBase64 = ImageCompressionUtils.compressImageBase64(sourceBytes,
 
 // Compressing to Base64 from Base64 encoded source image bytes
 String compressedBase64 = ImageCompressionUtils.compressImageBase64(sourceBase64, quality);
-```  
+```
 
 
 ### `ConcurrentCache`
@@ -41,7 +41,7 @@ int cacheSize = 25;
 
 private ConcurrentCache<Integer, String> mCache = new ConcurrentCache<>(objectTTL, cleanUpInterval, cacheSize);
 
-```  
+```
 
 
 ### `CloneUtils`
@@ -52,7 +52,7 @@ Used to deep clone objects that implements the Serializable interface. (Any obje
 
 ```java
 SomeObject clone = CloneUtils.deepClone(origin, SomeObject.class);
-```  
+```
 
 
 ### `LuhnChecker`  
