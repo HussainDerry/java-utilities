@@ -32,13 +32,12 @@ A Thread-Safe Object-Oriented wrapper for the ImageCompressionUtils utility clas
 ImageCompressor mImageCompressor = new ImageCompressor().setCompressedImageQuality(0.75f);
 
 // Compressing an image to byte array
-byte[] compressed = mImageCompressor.setSourceImage(sourceBytes)
-  									.compressImageToByteArray();
+byte[] compressed = mImageCompressor.setSourceImage(sourceBytes).compressImageToByteArray();
 
 // Modifying the compressed image quality, and compressing a new image to Base64
-String compressedBase64 = mImageCompressor..setCompressedImageQuality(0.35f)
-										  .setSourceImage(sourceBytesTwo)
-  										  .compressImageToBase64();
+String compressedBase64 = mImageCompressor.setCompressedImageQuality(0.35f)
+					  .setSourceImage(sourceBytesTwo)
+  					  .compressImageToBase64();
 ```
 
 
