@@ -1,6 +1,6 @@
 package com.github.hussainderry.test;
 
-import com.github.hussainderry.ConcurrentCache;
+import com.github.hussainderry.cache.ConcurrentCache;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

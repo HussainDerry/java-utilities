@@ -1,6 +1,6 @@
 package com.github.hussainderry.test;
 
-import com.github.hussainderry.CloneUtils;
+import com.github.hussainderry.utils.CloneUtils;
 import com.github.hussainderry.test.model.DeepTestModel;
 import com.github.hussainderry.test.model.ShallowTestModel;
 import org.junit.Test;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.hussainderry;
+package com.github.hussainderry.cache;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,6 +1,6 @@
 package com.github.hussainderry.test;
 
-import com.github.hussainderry.LuhnChecker;
+import com.github.hussainderry.validation.LuhnChecker;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;

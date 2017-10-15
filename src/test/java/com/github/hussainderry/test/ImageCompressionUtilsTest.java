@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import static com.github.hussainderry.ImageCompressionUtils.compressImage;
+import static com.github.hussainderry.utils.ImageCompressionUtils.compressImage;
 import static org.junit.Assert.assertTrue;
 
 public class ImageCompressionUtilsTest {

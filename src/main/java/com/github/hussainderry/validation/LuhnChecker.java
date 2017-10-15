@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.hussainderry;
+package com.github.hussainderry.validation;
 
 /**
  * A helper class to check number validity using the Luhn algorithm.
