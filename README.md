@@ -19,16 +19,28 @@ final float quality = 0.35f;
 
 // Compressing to bytes from source image bytes
 byte[] compressed = ImageCompressionUtils.compressImage(sourceBytes, quality);
-
-// Compressing to bytes from Base64 encoded source image bytes
-byte[] compressed = ImageCompressionUtils.compressImage(sourceBase64, quality);
-
-// Compressing to Base64 from source image bytes
-String compressedBase64 = ImageCompressionUtils.compressImageBase64(sourceBytes, quality);
-
-// Compressing to Base64 from Base64 encoded source image bytes
-String compressedBase64 = ImageCompressionUtils.compressImageBase64(sourceBase64, quality);
 ```
+
+### `ImageCompressor`
+
+A Thread-Safe Object-Oriented wrapper for the ImageCompressionUtils utility class with Base64 and method chaining support.
+
+#### Sample Usage
+
+```java
+// Creating a new instance and setting the compressed image quality
+ImageCompressor mImageCompressor = new ImageCompressor().setCompressedImageQuality(0.75f);
+
+// Compressing an image to byte array
+byte[] compressed = mImageCompressor.setSourceImage(sourceBytes)
+  									.compressImageToByteArray();
+
+// Modifying the compressed image quality, and compressing a new image to Base64
+String compressedBase64 = mImageCompressor..setCompressedImageQuality(0.35f)
+										  .setSourceImage(sourceBytesTwo)
+  										  .compressImageToBase64();
+```
+
 
 
 ### `ConcurrentCache`
@@ -43,7 +55,6 @@ long objectTTL = 2000; // milliseconds
 int cacheSize = 25;
 
 private ConcurrentCache<Integer, String> mCache = new ConcurrentCache<>(objectTTL, cleanUpInterval, cacheSize);
-
 ```
 
 
@@ -93,3 +104,4 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
+
