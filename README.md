@@ -7,7 +7,7 @@ Contains helper classes that I find useful every now and then.
 
 ## Classes Summary
 
-### `ImageCompressionUtils`
+### ImageCompressionUtils
 
 Used to compress image files to JPEG format using the desired quality for the compressed image.
 
@@ -21,7 +21,7 @@ final float quality = 0.35f;
 byte[] compressed = ImageCompressionUtils.compressImage(sourceBytes, quality);
 ```
 
-### `ImageCompressor`
+### ImageCompressor
 
 A Thread-Safe Object-Oriented wrapper for the ImageCompressionUtils utility class with Base64 and method chaining support.
 
@@ -40,9 +40,7 @@ String compressedBase64 = mImageCompressor.setCompressedImageQuality(0.35f)
   					  .compressImageToBase64();
 ```
 
-
-
-### `ConcurrentCache`
+### ConcurrentCache
 
 Cache implementation with a periodic memory clean up process for objects that haven't been accessed for a specified period of time.
 
@@ -56,8 +54,68 @@ int cacheSize = 25;
 private ConcurrentCache<Integer, String> mCache = new ConcurrentCache<>(objectTTL, cleanUpInterval, cacheSize);
 ```
 
+### PBKDF2Helper
 
-### `CloneUtils`
+Wrapper class to help manipulate PBKDF2 parameters and generate keys.
+
+#### Sample Usage
+
+```java
+// Using the builder
+PBKDF2Helper mHelper = new PBKDF2Helper.Builder(KeySize.KEY_256)
+                .iterations(Iterations.MEDIUM)
+                .saltSize(SaltSize.SALT_128)
+                .build();
+
+// Generating a key
+byte[] key = mHelper.createKeyFromPassword(PASSWORD);
+
+// Getting configurations for storage
+String config = mHelper.getPbkdf2Configurations();
+
+// Creation using the configurations string
+PBKDF2Helper mHelper = new PBKDF2Helper.Builder(config).build();
+```
+
+### FileEncryptorAES
+
+Used to encrypt files using AES with PBKDF2.
+
+#### Sample Usage
+
+```java
+// Using factory method for creation
+FileEncryptorAES mEncryptor = FileEncryptorAES.createEncryptorWithHighSecurityParams(PASSWORD);
+
+// Setting the progress monitor
+mEncryptor.setProgressMonitor((int progress) -> System.out.println());
+
+// Encryption
+BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile);
+BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile);
+mEncryptor.encrypt(mInputStream, mOutputstream);
+```
+
+### FileDecryptorAES
+
+Used to decrypt files encrypted with FileEncryptorAES.
+
+#### Sample Usage
+
+```java
+// Creation
+FileDecryptorAES mDecryptor = new FileDecryptorAES(PASSWORD);
+
+// Setting the progress monitor
+mDecryptor.setProgressMonitor((int progress) -> System.out.println());
+
+// Decryption
+BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile);
+BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile);
+mDecryptor.decrypt(mInputStream, mOutputStream);   
+```
+
+### CloneUtils
 
 Used to deep clone objects that implements the Serializable interface. (Any objects used by the class must also implement Serializable).
 
@@ -68,7 +126,7 @@ SomeObject clone = CloneUtils.deepClone(origin, SomeObject.class);
 ```
 
 
-### `LuhnChecker`  
+### LuhnChecker  
 
  Used to check card numbers using the Luhn formula.
 
