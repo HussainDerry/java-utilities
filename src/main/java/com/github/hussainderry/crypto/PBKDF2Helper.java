@@ -16,6 +16,7 @@
 package com.github.hussainderry.crypto;
 
 import com.github.hussainderry.crypto.enums.Iterations;
+import com.github.hussainderry.crypto.enums.KeySize;
 import com.github.hussainderry.crypto.enums.SaltSize;
 import org.apache.commons.codec.binary.Base64;
 
@@ -93,13 +94,18 @@ public class PBKDF2Helper {
 
     /**
      * @return PBKDF2 salt as byte array
+     * @throws IllegalStateException if the salt hasn't been generated yet
      */
     public byte[] getSalt(){
+        if(salt == null){
+            throw new IllegalStateException("Salt hasn't been generated yet!");
+        }
         return Arrays.copyOf(salt, salt.length);
     }
 
     /**
      * @return PBKDF2 salt as HEX string
+     * @throws IllegalStateException if the salt hasn't been generated yet
      */
     public String getSaltAsHexString(){
         return new BigInteger(getSalt()).toString(16);
@@ -107,6 +113,7 @@ public class PBKDF2Helper {
 
     /**
      * @return PBKDF2 Base64 encoded salt
+     * @throws IllegalStateException if the salt hasn't been generated yet
      */
     public String getSaltAsBase64String(){
         return Base64.encodeBase64String(getSalt());
@@ -141,8 +148,8 @@ public class PBKDF2Helper {
          * Creates a new builder object with the given key size
          * @param keySize key size
          */
-        public Builder(int keySize){
-            this.keySize = keySize;
+        public Builder(KeySize keySize){
+            this.keySize = keySize.getValue();
         }
 
         /**
