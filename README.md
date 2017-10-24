@@ -91,8 +91,8 @@ FileEncryptorAES mEncryptor = FileEncryptorAES.createEncryptorWithHighSecurityPa
 mEncryptor.setProgressMonitor((int progress) -> System.out.println());
 
 // Encryption
-BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile);
-BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile);
+BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile));
+BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile));
 mEncryptor.encrypt(mInputStream, mOutputstream);
 ```
 
@@ -110,8 +110,8 @@ FileDecryptorAES mDecryptor = new FileDecryptorAES(PASSWORD);
 mDecryptor.setProgressMonitor((int progress) -> System.out.println());
 
 // Decryption
-BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile);
-BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile);
+BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile));
+BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile));
 mDecryptor.decrypt(mInputStream, mOutputStream);   
 ```
 
