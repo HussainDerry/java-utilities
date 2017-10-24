@@ -53,7 +53,7 @@ public class FileDecryptorAES {
     /**
      * Create a new {@link FileDecryptorAES} using a password
      * @param password The password to use for decryption
-     * @throws RuntimeException if there is an error initializing the cipher
+     * @throws IllegalStateException if there is an error initializing the cipher
      */
     public FileDecryptorAES(String password){
         this.password = password;
@@ -61,7 +61,7 @@ public class FileDecryptorAES {
             this.mAesCipher = Cipher.getInstance(CIPHER_PARAMS);
             this.mDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            throw new RuntimeException("Unable to initialize cipher", e);
+            throw new IllegalStateException("Unable to initialize cipher", e);
         }
     }
 
@@ -83,7 +83,7 @@ public class FileDecryptorAES {
      * @param mOutputStream {@link BufferedOutputStream} The target to write the decrypted data to
      * @return long The number of bytes decrypted
      * @throws IllegalArgumentException if any of the arguments is null
-     * @throws RuntimeException if there is an IO exception
+     * @throws IllegalStateException if there is an IO exception
      */
     public long decrypt(BufferedInputStream mInputStream, BufferedOutputStream mOutputStream){
         if(mInputStream == null || mOutputStream == null){
@@ -109,7 +109,7 @@ public class FileDecryptorAES {
                 mOutputStream.flush();
                 return counter * BUFFER_SIZE;
             }catch(IOException e){
-                throw new RuntimeException(e);
+                throw new IllegalStateException(e);
             }
         }
     }
@@ -125,7 +125,7 @@ public class FileDecryptorAES {
     /**
      * Loads the encryption params from the encrypted file
      * @param mInputStream The input stream of the encrypted file
-     * @throws RuntimeException if an IO exception occurs
+     * @throws IllegalStateException if an IO exception occurs
      */
     private void loadEncryptionParams(InputStream mInputStream){
         try{
@@ -146,7 +146,7 @@ public class FileDecryptorAES {
             this.mHelper = new PBKDF2Helper.Builder(config).build();
 
         }catch(IOException e) {
-            throw new RuntimeException("Error reading params", e);
+            throw new IllegalStateException("Error reading params", e);
         }
     }
 
@@ -187,7 +187,7 @@ public class FileDecryptorAES {
         try {
             mAesCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new IvParameterSpec(iv));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException("Unable to init encryption mode", e);
+            throw new IllegalStateException("Unable to init encryption mode", e);
         }
     }
 

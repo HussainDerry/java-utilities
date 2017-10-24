@@ -89,7 +89,7 @@ public class PBKDF2Helper {
      * @return true if the salt has been generated, else false
      */
     public boolean saltGenerated(){
-        return !(salt == null);
+        return salt != null;
     }
 
     /**

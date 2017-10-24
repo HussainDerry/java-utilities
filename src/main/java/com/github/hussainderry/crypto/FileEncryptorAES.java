@@ -55,7 +55,7 @@ public class FileEncryptorAES {
      * AES Key Size: 128, PBKDF2 Salt Size: 32, PBKDF2 Iterations: 1000
      * @param password The base password to use
      * @return configured FileEncryptorAES instance
-     * @throws RuntimeException if there is an error initializing the cipher
+     * @throws IllegalStateException if there is an error initializing the cipher
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public static FileEncryptorAES createEncryptorWithMinimumSecurityParams(String password){
@@ -67,7 +67,7 @@ public class FileEncryptorAES {
      * AES Key Size: 192, PBKDF2 Salt Size: 64, PBKDF2 Iterations: 10,000
      * @param password The base password to use
      * @return configured FileEncryptorAES instance
-     * @throws RuntimeException if there is an error initializing the cipher
+     * @throws IllegalStateException if there is an error initializing the cipher
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public static FileEncryptorAES createEncryptorWithMediumSecurityParams(String password){
@@ -79,7 +79,7 @@ public class FileEncryptorAES {
      * AES Key Size: 256, PBKDF2 Salt Size: 128, PBKDF2 Iterations: 20,000
      * @param password The base password to use
      * @return configured FileEncryptorAES instance
-     * @throws RuntimeException if there is an error initializing the cipher
+     * @throws IllegalStateException if there is an error initializing the cipher
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public static FileEncryptorAES createEncryptorWithHighSecurityParams(String password){
@@ -93,7 +93,7 @@ public class FileEncryptorAES {
      * @param pbkdf2SaltSize The size of salt used by PBKDF2
      * @param pbkdf2Iterations The PBKDF2 iterations
      * @return configured FileEncryptorAES instance
-     * @throws RuntimeException if there is an error initializing the cipher
+     * @throws IllegalStateException if there is an error initializing the cipher
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public static FileEncryptorAES createEncryptorWithCustomSecurityParams(String password, KeySize keySize, Iterations pbkdf2Iterations, SaltSize pbkdf2SaltSize){
@@ -114,7 +114,7 @@ public class FileEncryptorAES {
             this.mAesCipher = Cipher.getInstance(CIPHER_PARAMS);
             this.mDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            throw new RuntimeException("Unable to initialize cipher", e);
+            throw new IllegalStateException("Unable to initialize cipher", e);
         }
         initParams(password);
     }
@@ -147,7 +147,7 @@ public class FileEncryptorAES {
      * @param mOutputStream {@link BufferedOutputStream} The target to write the encrypted data to
      * @return long The number of bytes encrypted
      * @throws IllegalArgumentException if any of the arguments is null
-     * @throws RuntimeException if there is an IO exception
+     * @throws IllegalStateException if there is an IO exception
      */
     public long encrypt(BufferedInputStream mInputStream, BufferedOutputStream mOutputStream){
         if(mInputStream == null || mOutputStream == null){
@@ -185,7 +185,7 @@ public class FileEncryptorAES {
 
                 return counter * BUFFER_SIZE;
             }catch(IOException e){
-                throw new RuntimeException(e);
+                throw new IllegalStateException(e);
             }
         }
     }
@@ -207,7 +207,7 @@ public class FileEncryptorAES {
         try {
             mAesCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new IvParameterSpec(iv));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException("Unable to init encryption mode", e);
+            throw new IllegalStateException("Unable to init encryption mode", e);
         }
     }
 }
