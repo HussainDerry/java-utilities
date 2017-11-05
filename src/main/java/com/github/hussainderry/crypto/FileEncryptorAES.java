@@ -30,7 +30,6 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.util.zip.DeflaterOutputStream;
 
 import static com.github.hussainderry.crypto.Constants.*;
 
@@ -157,8 +156,7 @@ public class FileEncryptorAES {
             mRandom.nextBytes(iv);
             setModeEncrypt();
 
-            try(DeflaterOutputStream mDeflaterOutputStream = new DeflaterOutputStream(mOutputStream);
-                CipherOutputStream mAesOutputStream = new CipherOutputStream(mDeflaterOutputStream, mAesCipher)){
+            try(CipherOutputStream mAesOutputStream = new CipherOutputStream(mOutputStream, mAesCipher)){
 
                 mOutputStream.write(Base64.encodeBase64(checksum));
                 mOutputStream.write(SEPARATOR);
@@ -179,8 +177,6 @@ public class FileEncryptorAES {
 
                 mAesOutputStream.flush();
                 mAesOutputStream.close();
-                mDeflaterOutputStream.finish();
-                mDeflaterOutputStream.flush();
                 mOutputStream.flush();
 
                 return counter * BUFFER_SIZE;

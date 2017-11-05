@@ -32,7 +32,6 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.zip.InflaterInputStream;
 
 import static com.github.hussainderry.crypto.Constants.*;
 
@@ -94,8 +93,7 @@ public class FileDecryptorAES {
             initParams(password);
             setModeDecrypt();
 
-            try(InflaterInputStream mInflaterInputStream = new InflaterInputStream(mInputStream);
-                CipherInputStream mAesInputStream = new CipherInputStream(mInflaterInputStream, mAesCipher)){
+            try(CipherInputStream mAesInputStream = new CipherInputStream(mInputStream, mAesCipher)){
 
                 int itr = mInputStream.available() / BUFFER_SIZE;
                 int counter = 0;
