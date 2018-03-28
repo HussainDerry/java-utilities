@@ -19,7 +19,7 @@ package com.github.hussainderry.storage;
 import java.util.Optional;
 
 /**
- * @author Hussain Al-Derry <hussain.derry@gmail.com>
+ * @author Hussain Al-Derry
  * @version 1.0
  */
 public interface SecurePreferences {

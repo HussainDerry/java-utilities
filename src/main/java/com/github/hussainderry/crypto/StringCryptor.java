@@ -28,7 +28,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * @author Hussain Al-Derry <hussain.derry@gmail.com>
+ * @author Hussain Al-Derry
  * @version 1.0
  * */
 public final class StringCryptor {

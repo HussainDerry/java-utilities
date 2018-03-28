@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 /**
  * Used to configure encryption parameters.
- * @author Hussain Al-Derry <hussain.derry@gmail.com>
+ * @author Hussain Al-Derry
  * @version 1.0
  * */
 public final class PrefSecurityConfig implements Serializable {

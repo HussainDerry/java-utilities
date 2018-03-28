@@ -18,7 +18,7 @@ package com.github.hussainderry.crypto.enums;
 
 /**
  * Types of digests that can be used with PBKDF2
- * @author Hussain Al-Derry <hussain.derry@gmail.com>
+ * @author Hussain Al-Derry
  * @version 1.0
  * */
 public enum DigestType {
