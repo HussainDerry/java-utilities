@@ -115,6 +115,28 @@ BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStre
 mDecryptor.decrypt(mInputStream, mOutputStream);   
 ```
 
+### Secure Preferences
+
+Provides an AES encryption layer over the `java.util.prefs.Preferences` class.
+
+#### Sample Usage
+
+```java
+// Setting up the prefs
+PrefSecurityConfig mConfig = new PrefSecurityConfig.Builder("test-password").build();
+SecurePreferences mPreferences = new SecurePreferencesImpl("test-node", mConfig);
+
+// Storing a string value
+String str = "test-data";
+mPreferences.putString("string", str);
+
+// Getting the value
+Optional<String> mOptional = mPreferences.getString("string");
+if(mOptional.isPresent()){
+    String loaded = mOptional.get();
+}
+```
+
 ### CloneUtils
 
 Used to deep clone objects that implements the Serializable interface. (Any objects used by the class must also implement Serializable).
