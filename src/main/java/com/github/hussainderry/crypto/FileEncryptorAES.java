@@ -18,20 +18,31 @@ package com.github.hussainderry.crypto;
 import com.github.hussainderry.crypto.enums.Iterations;
 import com.github.hussainderry.crypto.enums.KeySize;
 import com.github.hussainderry.crypto.enums.SaltSize;
-import org.apache.commons.codec.binary.Base64;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
 
-import static com.github.hussainderry.crypto.Constants.*;
+import static com.github.hussainderry.crypto.Constants.ALGORITHM;
+import static com.github.hussainderry.crypto.Constants.BUFFER_SIZE;
+import static com.github.hussainderry.crypto.Constants.CIPHER_PARAMS;
+import static com.github.hussainderry.crypto.Constants.DIGEST_ALGORITHM;
+import static com.github.hussainderry.crypto.Constants.INT_SIZE;
+import static com.github.hussainderry.crypto.Constants.IV_SIZE;
+import static com.github.hussainderry.crypto.Constants.TAG_LENGTH;
 
 
 /**
@@ -158,12 +169,16 @@ public class FileEncryptorAES {
 
             try(CipherOutputStream mAesOutputStream = new CipherOutputStream(mOutputStream, mAesCipher)){
 
-                mOutputStream.write(Base64.encodeBase64(checksum));
-                mOutputStream.write(SEPARATOR);
-                mOutputStream.write(Base64.encodeBase64(iv));
-                mOutputStream.write(SEPARATOR);
-                mOutputStream.write(Base64.encodeBase64(mHelper.getPbkdf2Configurations().getBytes(StandardCharsets.UTF_8)));
-                mOutputStream.write(SEPARATOR);
+                byte[] config = mHelper.getPbkdf2Configurations().getBytes(StandardCharsets.UTF_8);
+                ByteBuffer mBuffer = ByteBuffer.allocate((INT_SIZE * 3) + checksum.length + iv.length + config.length);
+                mBuffer.putInt(checksum.length);
+                mBuffer.put(checksum);
+                mBuffer.putInt(iv.length);
+                mBuffer.put(iv);
+                mBuffer.putInt(config.length);
+                mBuffer.put(config);
+
+                mOutputStream.write(mBuffer.array());
                 mOutputStream.flush();
 
                 int itr = mInputStream.available() / BUFFER_SIZE;
@@ -200,9 +215,9 @@ public class FileEncryptorAES {
      * Initializes the Cipher with the current encryption parameters
      */
     private void setModeEncrypt()  {
-        try {
-            mAesCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new IvParameterSpec(iv));
-        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+        try{
+            mAesCipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new GCMParameterSpec(TAG_LENGTH, iv));
+        }catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new IllegalStateException("Unable to init encryption mode", e);
         }
     }

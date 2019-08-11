@@ -15,13 +15,6 @@
  */
 package com.github.hussainderry.crypto;
 
-import org.apache.commons.codec.binary.Base64;
-
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -33,7 +26,17 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
-import static com.github.hussainderry.crypto.Constants.*;
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import static com.github.hussainderry.crypto.Constants.ALGORITHM;
+import static com.github.hussainderry.crypto.Constants.BUFFER_SIZE;
+import static com.github.hussainderry.crypto.Constants.CIPHER_PARAMS;
+import static com.github.hussainderry.crypto.Constants.DIGEST_ALGORITHM;
+import static com.github.hussainderry.crypto.Constants.TAG_LENGTH;
 
 /**
  * Used to decrypt files encrypted with {@link FileEncryptorAES}
@@ -127,45 +130,46 @@ public class FileDecryptorAES {
      */
     private void loadEncryptionParams(InputStream mInputStream){
         try{
-
-            // Loading password checksum
-            String checksumBase64 = readToNextSeparator(mInputStream);
-            byte[] checksum = Base64.decodeBase64(checksumBase64);
-            if(!validatePasswordChecksum(checksum)){
+            // Loading checksum
+            byte[] intBuffer = new byte[4];
+            for(int i = 0; i < 4; i++){
+                intBuffer[i] = (byte) mInputStream.read();
+            }
+            int checksumLength = byteArrayToInt(intBuffer);
+            byte[] checksum = new byte[checksumLength];
+            int res = mInputStream.read(checksum);
+            if(res != checksumLength){
+                throw new IllegalStateException("Invalid checksum length");
+            }else if(!validatePasswordChecksum(checksum)){
                 throw new IllegalStateException("Invalid password");
             }
 
             // Loading IV
-            String ivBase64 = readToNextSeparator(mInputStream);
-            this.iv = Base64.decodeBase64(ivBase64);
+            for(int i = 0; i < 4; i++){
+                intBuffer[i] = (byte) mInputStream.read();
+            }
+            int ivLength = byteArrayToInt(intBuffer);
+            iv = new byte[ivLength];
+            res = mInputStream.read(iv);
+            if(res != ivLength){
+                throw new IllegalStateException("Malformed IV");
+            }
 
             // Loading PBKDF2 configurations
-            String config = new String(Base64.decodeBase64(readToNextSeparator(mInputStream)), StandardCharsets.UTF_8);
-            this.mHelper = new PBKDF2Helper.Builder(config).build();
+            for(int i = 0; i < 4; i++){
+                intBuffer[i] = (byte) mInputStream.read();
+            }
+            int configLength = byteArrayToInt(intBuffer);
+            byte[] config = new byte[configLength];
+            res = mInputStream.read(config);
+            if(res != configLength){
+                throw new IllegalStateException("Invalid Config");
+            }
+            this.mHelper = new PBKDF2Helper.Builder(new String(config, StandardCharsets.UTF_8)).build();
 
         }catch(IOException e) {
             throw new IllegalStateException("Error reading params", e);
         }
-    }
-
-    /**
-     * Loads the next encryption parameter from the encrypted file
-     * @param mInputStream The encrypted file input stream
-     * @return String base64 encoded param
-     * @throws IOException If an IO error occurs
-     */
-    private String readToNextSeparator(final InputStream mInputStream) throws IOException{
-        int r;
-        StringBuilder mStringBuilder = new StringBuilder();
-        while((r = mInputStream.read()) != -1){
-            char temp = (char) r;
-            if(temp != SEPARATOR){
-                mStringBuilder.append(temp);
-            }else{
-                break;
-            }
-        }
-        return mStringBuilder.toString();
     }
 
     /**
@@ -183,7 +187,7 @@ public class FileDecryptorAES {
      */
     private void setModeDecrypt()  {
         try {
-            mAesCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new IvParameterSpec(iv));
+            mAesCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new GCMParameterSpec(TAG_LENGTH, iv));
         } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new IllegalStateException("Unable to init encryption mode", e);
         }
@@ -197,5 +201,14 @@ public class FileDecryptorAES {
     private boolean validatePasswordChecksum(final byte[] fileChecksum){
         byte[] passwordChecksum = mDigest.digest(password.getBytes(StandardCharsets.UTF_8));
         return Arrays.equals(passwordChecksum, fileChecksum);
+    }
+
+    private int byteArrayToInt(byte[] b){
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            int shift = (4 - 1 - i) * 8;
+            value += (b[i] & 0x000000FF) << shift;
+        }
+        return value;
     }
 }

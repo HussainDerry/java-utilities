@@ -16,8 +16,8 @@
 
 package com.github.hussainderry.storage;
 
+import com.github.hussainderry.crypto.CipherAES;
 import com.github.hussainderry.crypto.HashSHA;
-import com.github.hussainderry.crypto.StringCryptor;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -31,11 +31,13 @@ import java.util.prefs.Preferences;
 public final class SecurePreferencesImpl implements SecurePreferences{
 
     private final Preferences mPreferences;
-    private final StringCryptor mCryptor;
+    private final CipherAES mCipherAES;
+    private final char[] password;
 
-    public SecurePreferencesImpl(String nodeName, PrefSecurityConfig securityConfig) {
+    public SecurePreferencesImpl(String nodeName, String password) {
         this.mPreferences = Preferences.userRoot().node(nodeName);
-        this.mCryptor = StringCryptor.initWithSecurityConfig(securityConfig);
+        this.mCipherAES = new CipherAES();
+        this.password = password.toCharArray();
     }
 
     @Override
@@ -136,11 +138,11 @@ public final class SecurePreferencesImpl implements SecurePreferences{
     }
 
     private String encryptToBase64(String data){
-        return mCryptor.encryptToBase64(data.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(mCipherAES.encrypt(password, data.getBytes(StandardCharsets.UTF_8)));
     }
 
     private String decryptFromBase64(String data){
-        byte[] ret = mCryptor.decryptFromBase64(data);
+        byte[] ret = mCipherAES.decrypt(password, Base64.getDecoder().decode(data));
         return new String(ret, StandardCharsets.UTF_8);
     }
 }

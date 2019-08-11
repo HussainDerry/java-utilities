@@ -21,14 +21,14 @@ public class Constants {
     public static final int BUFFER_SIZE = 16;
 
     /* Encryption Config */
-    public static final int IV_SIZE = 16;
+    public static final int IV_SIZE = 12;
+    public static final int INT_SIZE = 4;
+    public static final int TAG_LENGTH = 128;
     public static final String ALGORITHM = "AES";
-    public static final String BLOCK_CHAINING_MODE = "CBC";
-    public static final String PADDING_MODE = "PKCS5Padding";
+    public static final String BLOCK_CHAINING_MODE = "GCM";
+    public static final String PADDING_MODE = "NoPadding";
     public static final String CIPHER_PARAMS = String.format("%s/%s/%s", ALGORITHM, BLOCK_CHAINING_MODE, PADDING_MODE);
     public static final String DIGEST_ALGORITHM = "SHA-256";
-    public static final String KEY_DERIVATION_ALGORITHM = "PBKDF2WithHmacSHA1";
-
-    public static final char SEPARATOR = '.';
+    public static final String KEY_DERIVATION_ALGORITHM = "PBKDF2WithHmacSHA256";
 
 }
