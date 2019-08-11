@@ -123,8 +123,7 @@ Provides an AES encryption layer over the `java.util.prefs.Preferences` class.
 
 ```java
 // Setting up the prefs
-PrefSecurityConfig mConfig = new PrefSecurityConfig.Builder("test-password").build();
-SecurePreferences mPreferences = new SecurePreferencesImpl("test-node", mConfig);
+SecurePreferences mPreferences = new SecurePreferencesImpl("test-node", "pa$$word");
 
 // Storing a string value
 String str = "test-data";
