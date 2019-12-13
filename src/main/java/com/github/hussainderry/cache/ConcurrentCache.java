@@ -62,7 +62,8 @@ public class ConcurrentCache<K, V> {
      * @return The old value corresponding to the provided key
      * */
     public V putIfAbsent(K key, V value){
-        return mMap.putIfAbsent(key, new Holder<>(value)).getValue();
+        Holder<V> vHolder = mMap.putIfAbsent(key, new Holder<>(value));
+        return vHolder != null ? vHolder.getValue() : null;
     }
 
     /**
