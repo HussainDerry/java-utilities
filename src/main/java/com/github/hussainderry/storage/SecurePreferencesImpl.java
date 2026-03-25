@@ -18,15 +18,17 @@ package com.github.hussainderry.storage;
 
 import com.github.hussainderry.crypto.CipherAES;
 import com.github.hussainderry.crypto.HashSHA;
+import com.github.hussainderry.crypto.exception.DecryptionException;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.prefs.Preferences;
 
 /**
  * @author Hussain Al-Derry
- * @version 1.0
+ * @version 2.0
  */
 public final class SecurePreferencesImpl implements SecurePreferences{
 
@@ -34,44 +36,55 @@ public final class SecurePreferencesImpl implements SecurePreferences{
     private final CipherAES mCipherAES;
     private final char[] password;
 
-    public SecurePreferencesImpl(String nodeName, String password) {
+    public SecurePreferencesImpl(String nodeName, char[] password){
+        if(nodeName == null){
+            throw new IllegalArgumentException("Node name cannot be null");
+        }
+        if(password == null){
+            throw new IllegalArgumentException("Password cannot be null");
+        }
         this.mPreferences = Preferences.userRoot().node(nodeName);
         this.mCipherAES = new CipherAES();
-        this.password = password.toCharArray();
+        this.password = Arrays.copyOf(password, password.length);
     }
 
     @Override
-    public SecurePreferences putString(String key, String value) {
+    public void close(){
+        Arrays.fill(password, '\0');
+    }
+
+    @Override
+    public SecurePreferences putString(String key, String value){
         mPreferences.put(generateKeyHash(key), encryptToBase64(value));
         return this;
     }
 
     @Override
-    public SecurePreferences putInt(String key, int value) {
+    public SecurePreferences putInt(String key, int value){
         mPreferences.put(generateKeyHash(key), encryptToBase64(Integer.toString(value)));
         return this;
     }
 
     @Override
-    public SecurePreferences putDouble(String key, double value) {
+    public SecurePreferences putDouble(String key, double value){
         mPreferences.put(generateKeyHash(key), encryptToBase64(Double.toString(value)));
         return this;
     }
 
     @Override
-    public SecurePreferences putLong(String key, long value) {
+    public SecurePreferences putLong(String key, long value){
         mPreferences.put(generateKeyHash(key), encryptToBase64(Long.toString(value)));
         return this;
     }
 
     @Override
-    public SecurePreferences putBoolean(String key, boolean value) {
+    public SecurePreferences putBoolean(String key, boolean value){
         mPreferences.put(generateKeyHash(key), encryptToBase64(Boolean.toString(value)));
         return this;
     }
 
     @Override
-    public Optional<String> getString(String key) {
+    public Optional<String> getString(String key){
         String val = mPreferences.get(generateKeyHash(key), null);
         if(val != null){
             return Optional.of(decryptFromBase64(val));
@@ -81,13 +94,13 @@ public final class SecurePreferencesImpl implements SecurePreferences{
     }
 
     @Override
-    public Optional<Integer> getInt(String key) {
+    public Optional<Integer> getInt(String key){
         String val = mPreferences.get(generateKeyHash(key), null);
         if(val != null){
             try{
                 return Optional.of(Integer.parseInt(decryptFromBase64(val)));
             }catch(NumberFormatException e){
-                throw new RuntimeException("Requested data type doesn't match the one stored!");
+                throw new DecryptionException("Requested data type doesn't match the one stored", e);
             }
         }else{
             return Optional.empty();
@@ -95,13 +108,13 @@ public final class SecurePreferencesImpl implements SecurePreferences{
     }
 
     @Override
-    public Optional<Double> getDouble(String key) {
+    public Optional<Double> getDouble(String key){
         String val = mPreferences.get(generateKeyHash(key), null);
         if(val != null){
             try{
                 return Optional.of(Double.parseDouble(decryptFromBase64(val)));
             }catch(NumberFormatException e){
-                throw new RuntimeException("Requested data type doesn't match the one stored!");
+                throw new DecryptionException("Requested data type doesn't match the one stored", e);
             }
         }else{
             return Optional.empty();
@@ -109,13 +122,13 @@ public final class SecurePreferencesImpl implements SecurePreferences{
     }
 
     @Override
-    public Optional<Long> getLong(String key) {
+    public Optional<Long> getLong(String key){
         String val = mPreferences.get(generateKeyHash(key), null);
         if(val != null){
             try{
                 return Optional.of(Long.parseLong(decryptFromBase64(val)));
             }catch(NumberFormatException e){
-                throw new RuntimeException("Requested data type doesn't match the one stored!");
+                throw new DecryptionException("Requested data type doesn't match the one stored", e);
             }
         }else{
             return Optional.empty();
@@ -123,7 +136,7 @@ public final class SecurePreferencesImpl implements SecurePreferences{
     }
 
     @Override
-    public Optional<Boolean> getBoolean(String key) {
+    public Optional<Boolean> getBoolean(String key){
         String val = mPreferences.get(generateKeyHash(key), null);
         if(val != null){
             return Optional.of(Boolean.parseBoolean(decryptFromBase64(val)));
@@ -142,7 +155,11 @@ public final class SecurePreferencesImpl implements SecurePreferences{
     }
 
     private String decryptFromBase64(String data){
-        byte[] ret = mCipherAES.decrypt(password, Base64.getDecoder().decode(data));
-        return new String(ret, StandardCharsets.UTF_8);
+        byte[] decrypted = mCipherAES.decrypt(password, Base64.getDecoder().decode(data));
+        try{
+            return new String(decrypted, StandardCharsets.UTF_8);
+        }finally{
+            Arrays.fill(decrypted, (byte) 0);
+        }
     }
 }

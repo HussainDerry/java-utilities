@@ -22,7 +22,7 @@ import java.util.Optional;
  * @author Hussain Al-Derry
  * @version 1.0
  */
-public interface SecurePreferences {
+public interface SecurePreferences extends AutoCloseable {
 
     SecurePreferences putString(String key, String value);
     SecurePreferences putInt(String key, int value);

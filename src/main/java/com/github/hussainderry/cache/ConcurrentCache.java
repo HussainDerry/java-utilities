@@ -15,7 +15,8 @@
  */
 package com.github.hussainderry.cache;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * @author Hussain Al-Derry
  * @version 1.0
  */
-public class ConcurrentCache<K, V> {
+public class ConcurrentCache<K, V> implements AutoCloseable {
 
     private final Map<K, Holder<V>> mMap;
     private final long timeToLive;
@@ -62,7 +63,8 @@ public class ConcurrentCache<K, V> {
      * @return The old value corresponding to the provided key
      * */
     public V putIfAbsent(K key, V value){
-        return mMap.putIfAbsent(key, new Holder<>(value)).getValue();
+        Holder<V> existing = mMap.putIfAbsent(key, new Holder<>(value));
+        return existing != null ? existing.getValue() : null;
     }
 
     /**
@@ -103,6 +105,14 @@ public class ConcurrentCache<K, V> {
     }
 
     /**
+     * Shuts down the cache clean up process and releases resources.
+     * */
+    @Override
+    public void close(){
+        mExecutorService.shutdown();
+    }
+
+    /**
      * Creates a daemon thread to take care of the clean up process
      * */
     private void setupCleanUpProcess(){
@@ -125,18 +135,18 @@ public class ConcurrentCache<K, V> {
     /**
      * Holder class for cache entries to monitor access to the entry.
      * */
-    private class Holder<T>{
+    private static final class Holder<T>{
 
-        private long lastAccessed;
-        private T value;
+        private volatile long lastAccessed;
+        private final T value;
 
         private Holder(T value){
-            lastAccessed = System.currentTimeMillis();
+            this.lastAccessed = System.currentTimeMillis();
             this.value = value;
         }
 
         private T getValue(){
-            lastAccessed = System.currentTimeMillis();
+            this.lastAccessed = System.currentTimeMillis();
             return this.value;
         }
 

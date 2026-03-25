@@ -19,7 +19,7 @@ public enum KeySize {
 
     KEY_256(256), KEY_128(128), KEY_192(192);
 
-    private int value;
+    private final int value;
 
     KeySize(int value){
         this.value = value;

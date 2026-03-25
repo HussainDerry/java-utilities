@@ -19,7 +19,7 @@ public enum SaltSize {
 
     SALT_32(32), SALT_64(64), SALT_128(128);
 
-    private int value;
+    private final int value;
 
     SaltSize(int value) {
         this.value = value;

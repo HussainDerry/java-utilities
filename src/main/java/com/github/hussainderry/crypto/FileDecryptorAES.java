@@ -15,6 +15,9 @@
  */
 package com.github.hussainderry.crypto;
 
+import com.github.hussainderry.crypto.exception.DecryptionException;
+import com.github.hussainderry.crypto.exception.InvalidPasswordException;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -22,12 +25,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -35,44 +39,40 @@ import javax.crypto.spec.SecretKeySpec;
 import static com.github.hussainderry.crypto.Constants.ALGORITHM;
 import static com.github.hussainderry.crypto.Constants.BUFFER_SIZE;
 import static com.github.hussainderry.crypto.Constants.CIPHER_PARAMS;
-import static com.github.hussainderry.crypto.Constants.DIGEST_ALGORITHM;
+import static com.github.hussainderry.crypto.Constants.IV_SIZE;
 import static com.github.hussainderry.crypto.Constants.TAG_LENGTH;
 
 /**
  * Used to decrypt files encrypted with {@link FileEncryptorAES}
  * @author Hussain Al-Derry
  */
-public class FileDecryptorAES {
+public final class FileDecryptorAES implements AutoCloseable {
 
-    private final Cipher mAesCipher;
-    private final MessageDigest mDigest;
-    private final String password;
+    private final char[] password;
     private ProgressMonitor mProgressMonitor;
-    private PBKDF2Helper mHelper;
-    private byte[] iv;
-    private byte[] key;
 
     /**
-     * Create a new {@link FileDecryptorAES} using a password
+     * Create a new {@link FileDecryptorAES} using a password.
+     * Call {@link #close()} when done to zero the internal password copy.
      * @param password The password to use for decryption
-     * @throws IllegalStateException if there is an error initializing the cipher
      */
-    public FileDecryptorAES(String password){
-        this.password = password;
-        try {
-            this.mAesCipher = Cipher.getInstance(CIPHER_PARAMS);
-            this.mDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-            throw new IllegalStateException("Unable to initialize cipher", e);
+    public FileDecryptorAES(char[] password){
+        if(password == null){
+            throw new IllegalArgumentException("Password cannot be null");
         }
+        this.password = Arrays.copyOf(password, password.length);
+    }
+
+    @Override
+    public void close(){
+        Arrays.fill(password, '\0');
     }
 
     /**
-     * Set the {@link ProgressMonitor} to get updated about the status of the process
+     * Set the {@link ProgressMonitor} to get updated about the status of the process.
      * @param mProgressMonitor The {@link ProgressMonitor} instance to use
-     * @throws IllegalArgumentException if any of the arguments is null
      */
-    public void setProgressMonitor(ProgressMonitor mProgressMonitor) {
+    public void setProgressMonitor(ProgressMonitor mProgressMonitor){
         if(mProgressMonitor == null){
             throw new IllegalArgumentException("ProgressMonitor cannot be null");
         }
@@ -80,132 +80,148 @@ public class FileDecryptorAES {
     }
 
     /**
-     * Decrypts the source InputStream and writes it to the OutputStream
+     * Decrypts the source InputStream and writes it to the OutputStream.
+     * Validates the password via an encrypted sentinel before streaming file data.
+     *
      * @param mInputStream {@link BufferedInputStream} The source to decrypt
      * @param mOutputStream {@link BufferedOutputStream} The target to write the decrypted data to
-     * @return long The number of bytes decrypted
+     * @return long The number of decrypted bytes written
      * @throws IllegalArgumentException if any of the arguments is null
-     * @throws IllegalStateException if there is an IO exception
+     * @throws InvalidPasswordException if the password is wrong
+     * @throws DecryptionException if an error occurs during decryption
      */
     public long decrypt(BufferedInputStream mInputStream, BufferedOutputStream mOutputStream){
         if(mInputStream == null || mOutputStream == null){
             throw new IllegalArgumentException("Arguments cannot be null");
         }
-        synchronized(mAesCipher){
-            loadEncryptionParams(mInputStream);
-            initParams(password);
-            setModeDecrypt();
 
-            try(CipherInputStream mAesInputStream = new CipherInputStream(mInputStream, mAesCipher)){
+        byte[] fileIv = readFileIv(mInputStream);
+        PBKDF2Helper helper = readPbkdf2Config(mInputStream);
 
-                int itr = mInputStream.available() / BUFFER_SIZE;
-                int counter = 0;
+        byte[] key = helper.createKeyFromPassword(password);
 
-                byte[] buffer = new byte[BUFFER_SIZE];
-                while(mAesInputStream.read(buffer) != -1){
-                    mOutputStream.write(buffer);
-                    publishProgress((counter++ * 100) / itr);
-                }
+        validateSentinel(mInputStream, key);
+        return decryptData(mInputStream, mOutputStream, key, fileIv);
+    }
 
-                mOutputStream.flush();
-                return counter * BUFFER_SIZE;
-            }catch(IOException e){
-                throw new IllegalStateException(e);
-            }
+    private byte[] readFileIv(InputStream in){
+        try{
+            byte[] intBuffer = new byte[4];
+            readFully(in, intBuffer);
+            int ivLength = byteArrayToInt(intBuffer);
+            byte[] iv = new byte[ivLength];
+            readFully(in, iv);
+            return iv;
+        }catch(IOException e){
+            throw new DecryptionException("Error reading file IV", e);
         }
     }
 
-    /**
-     * Initialize the encryption parameters
-     * @param password The base password
-     */
-    private void initParams(String password){
-        this.key = mHelper.createKeyFromPassword(password);
-    }
-
-    /**
-     * Loads the encryption params from the encrypted file
-     * @param mInputStream The input stream of the encrypted file
-     * @throws IllegalStateException if an IO exception occurs
-     */
-    private void loadEncryptionParams(InputStream mInputStream){
+    private PBKDF2Helper readPbkdf2Config(InputStream in){
         try{
-            // Loading checksum
             byte[] intBuffer = new byte[4];
-            for(int i = 0; i < 4; i++){
-                intBuffer[i] = (byte) mInputStream.read();
-            }
-            int checksumLength = byteArrayToInt(intBuffer);
-            byte[] checksum = new byte[checksumLength];
-            int res = mInputStream.read(checksum);
-            if(res != checksumLength){
-                throw new IllegalStateException("Invalid checksum length");
-            }else if(!validatePasswordChecksum(checksum)){
-                throw new IllegalStateException("Invalid password");
-            }
-
-            // Loading IV
-            for(int i = 0; i < 4; i++){
-                intBuffer[i] = (byte) mInputStream.read();
-            }
-            int ivLength = byteArrayToInt(intBuffer);
-            iv = new byte[ivLength];
-            res = mInputStream.read(iv);
-            if(res != ivLength){
-                throw new IllegalStateException("Malformed IV");
-            }
-
-            // Loading PBKDF2 configurations
-            for(int i = 0; i < 4; i++){
-                intBuffer[i] = (byte) mInputStream.read();
-            }
+            readFully(in, intBuffer);
             int configLength = byteArrayToInt(intBuffer);
             byte[] config = new byte[configLength];
-            res = mInputStream.read(config);
-            if(res != configLength){
-                throw new IllegalStateException("Invalid Config");
-            }
-            this.mHelper = new PBKDF2Helper.Builder(new String(config, StandardCharsets.UTF_8)).build();
-
-        }catch(IOException e) {
-            throw new IllegalStateException("Error reading params", e);
+            readFully(in, config);
+            return new PBKDF2Helper.Builder(new String(config, StandardCharsets.UTF_8)).build();
+        }catch(IOException e){
+            throw new DecryptionException("Error reading PBKDF2 config", e);
         }
     }
 
     /**
-     * If there is a {@link ProgressMonitor} available, publish progress
-     * @param progress The current progress
+     * Reads and decrypts the sentinel block. If GCM tag verification fails or the
+     * decrypted value doesn't match the expected magic, the password is wrong.
      */
+    private void validateSentinel(InputStream in, byte[] key){
+        try{
+            byte[] sentinelIv = new byte[IV_SIZE];
+            readFully(in, sentinelIv);
+
+            byte[] intBuffer = new byte[4];
+            readFully(in, intBuffer);
+            int sentinelLength = byteArrayToInt(intBuffer);
+            byte[] sentinelCiphertext = new byte[sentinelLength];
+            readFully(in, sentinelCiphertext);
+
+            Cipher sentinelCipher = createCipher();
+            initCipher(sentinelCipher, Cipher.DECRYPT_MODE, key, sentinelIv);
+            byte[] decrypted = sentinelCipher.doFinal(sentinelCiphertext);
+
+            if(!Arrays.equals(decrypted, Constants.getSentinelPlaintext())){
+                throw new InvalidPasswordException("Invalid password");
+            }
+        }catch(BadPaddingException e){
+            throw new InvalidPasswordException("Invalid password", e);
+        }catch(IllegalBlockSizeException e){
+            throw new DecryptionException("Corrupted sentinel block", e);
+        }catch(IOException e){
+            throw new DecryptionException("Error reading sentinel", e);
+        }
+    }
+
+    private long decryptData(BufferedInputStream in, BufferedOutputStream out, byte[] key, byte[] fileIv){
+        Cipher aesCipher = createCipher();
+        initCipher(aesCipher, Cipher.DECRYPT_MODE, key, fileIv);
+
+        try(CipherInputStream cipherIn = new CipherInputStream(in, aesCipher)){
+            long totalBytes = in.available();
+            long bytesProcessed = 0;
+
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int bytesRead;
+            while((bytesRead = cipherIn.read(buffer)) != -1){
+                out.write(buffer, 0, bytesRead);
+                bytesProcessed += bytesRead;
+                if(totalBytes > 0){
+                    publishProgress((int)((bytesProcessed * 100) / totalBytes));
+                }
+            }
+
+            out.flush();
+            return bytesProcessed;
+        }catch(IOException e){
+            throw new DecryptionException("IO error during decryption", e);
+        }
+    }
+
+    private void readFully(InputStream in, byte[] buffer) throws IOException{
+        int offset = 0;
+        while(offset < buffer.length){
+            int read = in.read(buffer, offset, buffer.length - offset);
+            if(read == -1){
+                throw new IOException("Unexpected end of stream");
+            }
+            offset += read;
+        }
+    }
+
     private void publishProgress(int progress){
         if(mProgressMonitor != null){
             mProgressMonitor.progressUpdated(progress);
         }
     }
 
-    /**
-     * Initializes the Cipher with the current encryption parameters
-     */
-    private void setModeDecrypt()  {
-        try {
-            mAesCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, ALGORITHM), new GCMParameterSpec(TAG_LENGTH, iv));
-        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new IllegalStateException("Unable to init encryption mode", e);
+    private Cipher createCipher(){
+        try{
+            return Cipher.getInstance(CIPHER_PARAMS);
+        }catch(NoSuchAlgorithmException | NoSuchPaddingException e){
+            throw new DecryptionException("Unable to initialize cipher", e);
         }
     }
 
-    /**
-     * Checks if the provided checksum matches the one corresponding to the current set password
-     * @param fileChecksum The password checksum loaded from the encrypted file
-     * @return true if the checksums match
-     */
-    private boolean validatePasswordChecksum(final byte[] fileChecksum){
-        byte[] passwordChecksum = mDigest.digest(password.getBytes(StandardCharsets.UTF_8));
-        return Arrays.equals(passwordChecksum, fileChecksum);
+    private void initCipher(Cipher cipher, int mode, byte[] key, byte[] iv){
+        try{
+            cipher.init(mode, new SecretKeySpec(key, ALGORITHM), new GCMParameterSpec(TAG_LENGTH, iv));
+        }catch(InvalidKeyException | InvalidAlgorithmParameterException e){
+            throw new DecryptionException("Unable to init cipher", e);
+        }
     }
 
     private int byteArrayToInt(byte[] b){
         int value = 0;
-        for (int i = 0; i < 4; i++) {
+        for(int i = 0; i < 4; i++){
             int shift = (4 - 1 - i) * 8;
             value += (b[i] & 0x000000FF) << shift;
         }

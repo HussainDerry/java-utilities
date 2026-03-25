@@ -42,7 +42,7 @@ String compressedBase64 = mImageCompressor.setCompressedImageQuality(0.35f)
 
 ### ConcurrentCache
 
-Cache implementation with a periodic memory clean up process for objects that haven't been accessed for a specified period of time.
+Cache implementation with a periodic memory clean up process for objects that haven't been accessed for a specified period of time. Implements `AutoCloseable` to shut down the cleanup executor.
 
 #### Sample Usage
 
@@ -51,7 +51,10 @@ long cleanUpInterval = 100; // milliseconds
 long objectTTL = 2000; // milliseconds
 int cacheSize = 25;
 
-private ConcurrentCache<Integer, String> mCache = new ConcurrentCache<>(objectTTL, cleanUpInterval, cacheSize);
+try(ConcurrentCache<Integer, String> mCache = new ConcurrentCache<>(objectTTL, cleanUpInterval, cacheSize)){
+    mCache.put(1, "value");
+    String value = mCache.get(1);
+}
 ```
 
 ### PBKDF2Helper
@@ -67,8 +70,9 @@ PBKDF2Helper mHelper = new PBKDF2Helper.Builder(KeySize.KEY_256)
                 .saltSize(SaltSize.SALT_128)
                 .build();
 
-// Generating a key
-byte[] key = mHelper.createKeyFromPassword(PASSWORD);
+// Generating a key (password as char[] for secure memory handling)
+char[] password = "myPassword".toCharArray();
+byte[] key = mHelper.createKeyFromPassword(password);
 
 // Getting configurations for storage
 String config = mHelper.getPbkdf2Configurations();
@@ -79,60 +83,64 @@ PBKDF2Helper mHelper = new PBKDF2Helper.Builder(config).build();
 
 ### FileEncryptorAES
 
-Used to encrypt files using AES with PBKDF2.
+Used to encrypt files using AES-GCM with PBKDF2. Instances are single-use.
 
 #### Sample Usage
 
 ```java
-// Using factory method for creation
-FileEncryptorAES mEncryptor = FileEncryptorAES.createEncryptorWithHighSecurityParams(PASSWORD);
+// Using factory method for creation (password as char[])
+char[] password = "myPassword".toCharArray();
+FileEncryptorAES mEncryptor = FileEncryptorAES.createEncryptorWithHighSecurityParams(password);
 
 // Setting the progress monitor
-mEncryptor.setProgressMonitor((int progress) -> System.out.println());
+mEncryptor.setProgressMonitor((int progress) -> System.out.println(progress));
 
 // Encryption
 BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile));
 BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile));
-mEncryptor.encrypt(mInputStream, mOutputstream);
+mEncryptor.encrypt(mInputStream, mOutputStream);
 ```
 
 ### FileDecryptorAES
 
-Used to decrypt files encrypted with FileEncryptorAES.
+Used to decrypt files encrypted with FileEncryptorAES. Implements `AutoCloseable` to zero the internal password copy.
 
 #### Sample Usage
 
 ```java
-// Creation
-FileDecryptorAES mDecryptor = new FileDecryptorAES(PASSWORD);
+// Creation (password as char[])
+char[] password = "myPassword".toCharArray();
+try(FileDecryptorAES mDecryptor = new FileDecryptorAES(password)){
 
-// Setting the progress monitor
-mDecryptor.setProgressMonitor((int progress) -> System.out.println());
+    // Setting the progress monitor
+    mDecryptor.setProgressMonitor((int progress) -> System.out.println(progress));
 
-// Decryption
-BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile));
-BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile));
-mDecryptor.decrypt(mInputStream, mOutputStream);   
+    // Decryption
+    BufferedInputStream mInputStream = new BufferedInputStream(new FileInputStream(mSourceFile));
+    BufferedOutputStream mOutputStream = new BufferedOutputStream(new FileOutputStream(mTargetFile));
+    mDecryptor.decrypt(mInputStream, mOutputStream);
+}
 ```
 
 ### Secure Preferences
 
-Provides an AES encryption layer over the `java.util.prefs.Preferences` class.
+Provides an AES encryption layer over the `java.util.prefs.Preferences` class. Implements `AutoCloseable` to zero the internal password copy.
 
 #### Sample Usage
 
 ```java
-// Setting up the prefs
-SecurePreferences mPreferences = new SecurePreferencesImpl("test-node", "pa$$word");
+// Setting up the prefs (password as char[])
+try(SecurePreferences mPreferences = new SecurePreferencesImpl("test-node", "pa$$word".toCharArray())){
 
-// Storing a string value
-String str = "test-data";
-mPreferences.putString("string", str);
+    // Storing a string value
+    String str = "test-data";
+    mPreferences.putString("string", str);
 
-// Getting the value
-Optional<String> mOptional = mPreferences.getString("string");
-if(mOptional.isPresent()){
-    String loaded = mOptional.get();
+    // Getting the value
+    Optional<String> mOptional = mPreferences.getString("string");
+    if(mOptional.isPresent()){
+        String loaded = mOptional.get();
+    }
 }
 ```
 
@@ -140,14 +148,14 @@ if(mOptional.isPresent()){
 
 Used to deep clone objects that implements the Serializable interface. (Any objects used by the class must also implement Serializable).
 
-#### Sample Usage 
+#### Sample Usage
 
 ```java
 SomeObject clone = CloneUtils.deepClone(origin, SomeObject.class);
 ```
 
 
-### LuhnChecker  
+### LuhnChecker
 
  Used to check card numbers using the Luhn formula.
 
@@ -165,7 +173,7 @@ boolean isValid = LuhnChecker.checkNumberValidity("4532136548631895");
    **Email** - [hussain.derry@gmail.com](mailto:hussain.derry@gmail.com)
 
 
-## License 
+## License
 
 ```latex
 Copyright 2017 Hussain Al-Derry
@@ -182,4 +190,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
-

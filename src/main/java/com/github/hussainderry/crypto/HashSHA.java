@@ -16,6 +16,8 @@
 
 package com.github.hussainderry.crypto;
 
+import com.github.hussainderry.crypto.exception.CryptoException;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -23,7 +25,9 @@ import java.security.NoSuchAlgorithmException;
  * @author Hussain Al-Derry
  * @version 0.1
  * */
-public class HashSHA {
+public final class HashSHA {
+
+    private HashSHA(){}
 
     /**
      * Hashes the given data using SHA-256
@@ -31,11 +35,14 @@ public class HashSHA {
      * @return hashed byte array containing the hash
      * */
     public static byte[] hashUsingSHA256(byte[] data){
+        if(data == null){
+            throw new IllegalArgumentException("Data cannot be null");
+        }
         try{
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return digest.digest(data);
         }catch(NoSuchAlgorithmException e){
-            throw new IllegalStateException("Unable to hash!");
+            throw new CryptoException("SHA-256 algorithm not available", e);
         }
     }
 
@@ -45,11 +52,14 @@ public class HashSHA {
      * @return hashed byte array containing the hash
      * */
     public static byte[] hashUsingSHA512(byte[] data){
+        if(data == null){
+            throw new IllegalArgumentException("Data cannot be null");
+        }
         try{
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
             return digest.digest(data);
         }catch(NoSuchAlgorithmException e){
-            throw new IllegalStateException("Unable to hash!");
+            throw new CryptoException("SHA-512 algorithm not available", e);
         }
     }
 }

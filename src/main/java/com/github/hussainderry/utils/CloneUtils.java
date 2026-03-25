@@ -15,35 +15,45 @@
  */
 package com.github.hussainderry.utils;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * Contains helper method to deep clone serializable objects
  * @author Hussain Al-Derry
  */
-public class CloneUtils {
+public final class CloneUtils {
+
+    private CloneUtils(){}
 
     /**
      * Deep clones an object using streams
      *
-     * @param object The object to be cloned, must implement {@link Serializable}
+     * @param object The object to be cloned, must implement {@link java.io.Serializable}
      * @param clazz The object type
      * @return an exact clone of the given object
+     * @throws IllegalArgumentException if any of the arguments is null
      * @throws IllegalStateException If an issue occurs while cloning the object
      */
     public static <T> T deepClone(T object, Class<T> clazz){
+        if(object == null){
+            throw new IllegalArgumentException("Object cannot be null");
+        }
+        if(clazz == null){
+            throw new IllegalArgumentException("Class cannot be null");
+        }
         try{
-            // Write provided object bytes to OutputStream
             ByteArrayOutputStream mByteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream mObjectOutputStream = new ObjectOutputStream(mByteArrayOutputStream);
             mObjectOutputStream.writeObject(object);
 
-            // Reading bytes via a new InputStream
             ByteArrayInputStream mByteArrayInputStream = new ByteArrayInputStream(mByteArrayOutputStream.toByteArray());
-            ObjectInputStream ois = new ObjectInputStream(mByteArrayInputStream);
+            ObjectInputStream mObjectInputStream = new ObjectInputStream(mByteArrayInputStream);
 
-            // Creating the clone object
-            return clazz.cast(ois.readObject());
+            return clazz.cast(mObjectInputStream.readObject());
         }catch(IOException | ClassNotFoundException | ClassCastException e){
             throw new IllegalStateException(e.getMessage(), e);
         }

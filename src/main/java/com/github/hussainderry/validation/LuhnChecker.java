@@ -19,7 +19,9 @@ package com.github.hussainderry.validation;
  * A helper class to check number validity using the Luhn algorithm.
  * @author Hussain Al-Derry
  */
-public class LuhnChecker {
+public final class LuhnChecker {
+
+    private LuhnChecker(){}
 
     private static final String INPUT_ERROR = "Input must contain only digits (0-9), no characters or whitespaces";
 
@@ -29,6 +31,13 @@ public class LuhnChecker {
      * @return boolean whether the number is valid or not.
      * */
     public static boolean checkNumberValidity(String number){
+        if(number == null){
+            throw new IllegalArgumentException("Number cannot be null");
+        }
+        if(number.isEmpty()){
+            throw new IllegalArgumentException("Number cannot be empty");
+        }
+
         int[] numbers;
 
         try{

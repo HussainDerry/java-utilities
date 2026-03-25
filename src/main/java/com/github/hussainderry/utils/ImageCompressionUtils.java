@@ -20,6 +20,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
+
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,7 +32,9 @@ import java.util.Iterator;
  * Helper class to compress images to JPG for storage
  * @author Hussain Al-Derry
  * */
-public class ImageCompressionUtils {
+public final class ImageCompressionUtils {
+
+    private ImageCompressionUtils(){}
 
     private static final String ILLEGAL_COMPRESSION_RATIO = "Illegal compressed image quality (quality must be >= 0 and <= 1)";
     private static final String NULL_BYTES = "imageBytes cannot be null";

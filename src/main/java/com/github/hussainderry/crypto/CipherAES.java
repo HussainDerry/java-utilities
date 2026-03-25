@@ -16,6 +16,10 @@
 
 package com.github.hussainderry.crypto;
 
+import com.github.hussainderry.crypto.exception.DecryptionException;
+import com.github.hussainderry.crypto.exception.EncryptionException;
+import com.github.hussainderry.crypto.exception.KeyDerivationException;
+
 import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -23,6 +27,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -43,34 +48,36 @@ import static com.github.hussainderry.crypto.Constants.TAG_LENGTH;
 
 /**
  * @author Hussain Al-Derry
- * @version 1.0
+ * @version 2.0
  * */
 public final class CipherAES{
 
     private static final int KEY_SIZE = 256; // bits
     private static final int SALT_SIZE = 64; // bits
-    private static final int PBKDF2_ITR = 65_536;
+    private static final int PBKDF2_ITR = 600_000;
 
     private final SecureRandom mRandom;
-    private final Cipher mCipher;
 
     public CipherAES(){
-        try{
-            mCipher = Cipher.getInstance(CIPHER_PARAMS);
-        }catch(NoSuchAlgorithmException | NoSuchPaddingException e){
-            throw new IllegalStateException("Unable To Initialize Cipher: " + e.getMessage());
-        }
-        this.mRandom = new SecureRandom(String.valueOf(System.currentTimeMillis()).getBytes());
+        this.mRandom = new SecureRandom();
     }
 
-    private SecretKey generateSecretKey(char[] password, byte [] iv){
+    private Cipher createCipher(){
         try{
-            KeySpec spec = new PBEKeySpec(password, iv, PBKDF2_ITR, KEY_SIZE); // AES-256
+            return Cipher.getInstance(CIPHER_PARAMS);
+        }catch(NoSuchAlgorithmException | NoSuchPaddingException e){
+            throw new EncryptionException("Unable to initialize cipher", e);
+        }
+    }
+
+    private SecretKey generateSecretKey(char[] password, byte[] salt){
+        try{
+            KeySpec spec = new PBEKeySpec(password, salt, PBKDF2_ITR, KEY_SIZE);
             SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_DERIVATION_ALGORITHM);
             byte[] key = secretKeyFactory.generateSecret(spec).getEncoded();
             return new SecretKeySpec(key, ALGORITHM);
         }catch(NoSuchAlgorithmException | InvalidKeySpecException e){
-            throw new IllegalStateException("Unable To Create Secret Key: " + e.getMessage());
+            throw new KeyDerivationException("Unable to create secret key", e);
         }
     }
 
@@ -81,7 +88,7 @@ public final class CipherAES{
      * @return The complete cipher text
      *
      * @throws IllegalArgumentException if the password or data are null
-     * @throws IllegalStateException if there is an error during the encryption process
+     * @throws EncryptionException if there is an error during the encryption process
      * */
     public byte[] encrypt(char[] password, byte[] data){
         if(password == null || password.length == 0){
@@ -90,31 +97,35 @@ public final class CipherAES{
             throw new IllegalArgumentException("Invalid Data");
         }
 
+        final char[] passwordCopy = Arrays.copyOf(password, password.length);
+        final byte[] dataCopy = Arrays.copyOf(data, data.length);
+
         try{
             byte[] salt = new byte[SALT_SIZE];
             mRandom.nextBytes(salt);
-            SecretKey mKey = generateSecretKey(password, salt);
+            SecretKey secretKey = generateSecretKey(passwordCopy, salt);
 
             byte[] iv = new byte[IV_SIZE];
             mRandom.nextBytes(iv);
             GCMParameterSpec mSpec = new GCMParameterSpec(TAG_LENGTH, iv);
 
-            byte[] res = null;
-            synchronized(mCipher){
-                mCipher.init(Cipher.ENCRYPT_MODE, mKey, mSpec);
-                res = mCipher.doFinal(data);
-            }
+            Cipher cipher = createCipher();
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, mSpec);
+            byte[] ciphertext = cipher.doFinal(dataCopy);
 
-            ByteBuffer mBuffer = ByteBuffer.allocate(INT_SIZE + SALT_SIZE + INT_SIZE + IV_SIZE + res.length);
+            ByteBuffer mBuffer = ByteBuffer.allocate(INT_SIZE + SALT_SIZE + INT_SIZE + IV_SIZE + ciphertext.length);
             mBuffer.putInt(SALT_SIZE);
             mBuffer.put(salt);
             mBuffer.putInt(IV_SIZE);
             mBuffer.put(iv);
-            mBuffer.put(res);
+            mBuffer.put(ciphertext);
 
             return mBuffer.array();
         }catch(InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e){
-            throw new IllegalStateException("Unable To Encrypt: " + e.getMessage());
+            throw new EncryptionException("Unable to encrypt", e);
+        }finally{
+            Arrays.fill(passwordCopy, '\0');
+            Arrays.fill(dataCopy, (byte) 0);
         }
     }
 
@@ -125,7 +136,7 @@ public final class CipherAES{
      * @return plain data
      *
      * @throws IllegalArgumentException if the password or data are null
-     * @throws IllegalStateException if there is an error during the decryption process
+     * @throws DecryptionException if there is an error during the decryption process
      * */
     public byte[] decrypt(char[] password, byte[] cipherMessage){
         if(password == null || password.length == 0){
@@ -133,6 +144,8 @@ public final class CipherAES{
         }else if(cipherMessage == null || cipherMessage.length == 0){
             throw new IllegalArgumentException("Invalid Cipher Data");
         }
+
+        final char[] passwordCopy = Arrays.copyOf(password, password.length);
 
         try{
             ByteBuffer mBuffer = ByteBuffer.wrap(cipherMessage);
@@ -145,11 +158,11 @@ public final class CipherAES{
             mBuffer.get(salt);
 
             // Creating secret key
-            SecretKey mKey = generateSecretKey(password, salt);
+            SecretKey secretKey = generateSecretKey(passwordCopy, salt);
 
             // Getting IV
             int ivSize = mBuffer.getInt();
-            if(ivSize != 12){
+            if(ivSize != IV_SIZE){
                 throw new IllegalArgumentException("Invalid IV Size: " + ivSize);
             }
             byte[] iv = new byte[IV_SIZE];
@@ -159,18 +172,16 @@ public final class CipherAES{
             GCMParameterSpec mSpec = new GCMParameterSpec(TAG_LENGTH, iv);
 
             // Getting cipher text
-            byte[] msg = new byte[mBuffer.remaining()];
-            mBuffer.get(msg);
+            byte[] encryptedData = new byte[mBuffer.remaining()];
+            mBuffer.get(encryptedData);
 
-            byte[] res = null;
-            synchronized(mCipher){
-                mCipher.init(Cipher.DECRYPT_MODE, mKey, mSpec);
-                res = mCipher.doFinal(msg);
-            }
-
-            return res;
+            Cipher cipher = createCipher();
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, mSpec);
+            return cipher.doFinal(encryptedData);
         }catch(InvalidKeyException | InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e){
-            throw new IllegalStateException("Unable To Decrypt: " + e.getMessage());
+            throw new DecryptionException("Unable to decrypt", e);
+        }finally{
+            Arrays.fill(passwordCopy, '\0');
         }
     }
 }

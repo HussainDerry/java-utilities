@@ -15,10 +15,15 @@
  */
 package com.github.hussainderry.crypto;
 
-public class Constants {
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
+public final class Constants {
+
+    private Constants(){}
 
     /* IO Config */
-    public static final int BUFFER_SIZE = 16;
+    public static final int BUFFER_SIZE = 8192;
 
     /* Encryption Config */
     public static final int IV_SIZE = 12;
@@ -30,5 +35,12 @@ public class Constants {
     public static final String CIPHER_PARAMS = String.format("%s/%s/%s", ALGORITHM, BLOCK_CHAINING_MODE, PADDING_MODE);
     public static final String DIGEST_ALGORITHM = "SHA-256";
     public static final String KEY_DERIVATION_ALGORITHM = "PBKDF2WithHmacSHA256";
+
+    /* Password Sentinel */
+    private static final byte[] SENTINEL_PLAINTEXT = "JUTIL_SENTINEL__".getBytes(StandardCharsets.UTF_8);
+
+    static byte[] getSentinelPlaintext(){
+        return Arrays.copyOf(SENTINEL_PLAINTEXT, SENTINEL_PLAINTEXT.length);
+    }
 
 }

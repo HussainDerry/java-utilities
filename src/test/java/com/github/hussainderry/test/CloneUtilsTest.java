@@ -13,17 +13,28 @@ import static org.junit.Assert.assertEquals;
 public class CloneUtilsTest {
 
     @Test
-    public void testShallowObject(){
+    public void shallow_object_clone_equals_original(){
         ShallowTestModel origin = createRandomShallowTestModelObject();
         ShallowTestModel clone = CloneUtils.deepClone(origin, ShallowTestModel.class);
         assertEquals(origin, clone);
     }
 
     @Test
-    public void testDeepObject(){
+    public void deep_nested_object_clone_equals_original(){
         DeepTestModel origin = createRandomDeepTestModelObject();
         DeepTestModel clone = CloneUtils.deepClone(origin, DeepTestModel.class);
         assertEquals(origin, clone);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void null_object_throws_illegal_argument(){
+        CloneUtils.deepClone(null, ShallowTestModel.class);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void null_class_throws_illegal_argument(){
+        ShallowTestModel origin = createRandomShallowTestModelObject();
+        CloneUtils.deepClone(origin, null);
     }
 
     private ShallowTestModel createRandomShallowTestModelObject(){

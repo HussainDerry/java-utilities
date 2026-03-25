@@ -17,9 +17,9 @@ package com.github.hussainderry.crypto.enums;
 
 public enum Iterations {
 
-    LOW(1000), MEDIUM(10_000), HIGH(20_000);
+    LOW(600_000), MEDIUM(1_000_000), HIGH(2_000_000);
 
-    private int value;
+    private final int value;
 
     Iterations(int value) {
         this.value = value;

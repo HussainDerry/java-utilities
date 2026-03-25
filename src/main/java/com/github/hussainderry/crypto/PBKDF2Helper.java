@@ -18,10 +18,13 @@ package com.github.hussainderry.crypto;
 import com.github.hussainderry.crypto.enums.Iterations;
 import com.github.hussainderry.crypto.enums.KeySize;
 import com.github.hussainderry.crypto.enums.SaltSize;
+import com.github.hussainderry.crypto.exception.KeyDerivationException;
+
 import org.apache.commons.codec.binary.Base64;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -34,7 +37,7 @@ import static com.github.hussainderry.crypto.Constants.KEY_DERIVATION_ALGORITHM;
  * Wrapper class to help manipulate PBKDF2 parameters and generate keys
  * @author Hussain Al-Derry
  */
-public class PBKDF2Helper {
+public final class PBKDF2Helper {
 
     private final SecureRandom mRandom;
     private final int iterations;
@@ -48,7 +51,7 @@ public class PBKDF2Helper {
      * @param saltSize The PBKDF2 salt size
      * @param iterations The PBKDF2 iterations
      */
-    public PBKDF2Helper(int keySize, int saltSize, int iterations) {
+    public PBKDF2Helper(int keySize, int saltSize, int iterations){
         this.iterations = iterations;
         this.saltSize = saltSize;
         this.keySize = keySize;
@@ -61,7 +64,10 @@ public class PBKDF2Helper {
      * @param iterations The PBKDF2 iterations
      * @param salt The PBKDF2 salt
      */
-    public PBKDF2Helper(int keySize, int iterations, byte[] salt) {
+    public PBKDF2Helper(int keySize, int iterations, byte[] salt){
+        if(salt == null){
+            throw new IllegalArgumentException("Salt cannot be null");
+        }
         this.iterations = iterations;
         this.saltSize = salt.length;
         this.keySize = keySize;
@@ -73,15 +79,22 @@ public class PBKDF2Helper {
      * Creates key by using PBKDF2 on the given password
      * @param password The password to use
      * @return key as byte array
+     * @throws IllegalArgumentException if the password is null
+     * @throws KeyDerivationException if key derivation fails
      */
-    public byte[] createKeyFromPassword(String password){
+    public byte[] createKeyFromPassword(char[] password){
+        if(password == null){
+            throw new IllegalArgumentException("Password cannot be null");
+        }
         generateInitialSalt();
-        PBEKeySpec mSpec = new PBEKeySpec(password.toCharArray(), salt, iterations, keySize);
-        try {
+        PBEKeySpec mSpec = new PBEKeySpec(password, salt, iterations, keySize);
+        try{
             SecretKeyFactory mKeyFactory = SecretKeyFactory.getInstance(KEY_DERIVATION_ALGORITHM);
             return mKeyFactory.generateSecret(mSpec).getEncoded();
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new IllegalStateException("Unable to create encryption key", e);
+        }catch(NoSuchAlgorithmException | InvalidKeySpecException e){
+            throw new KeyDerivationException("Unable to create encryption key", e);
+        }finally{
+            mSpec.clearPassword();
         }
     }
 
@@ -137,11 +150,11 @@ public class PBKDF2Helper {
     /**
      * Builder for PBKDF2Helper
      */
-    public static class Builder{
+    public static final class Builder{
 
         private int keySize;
         private int saltSize = 32;
-        private int iterations = 1000;
+        private int iterations = 600_000;
         private byte[] salt = null;
 
         /**
@@ -149,6 +162,9 @@ public class PBKDF2Helper {
          * @param keySize key size
          */
         public Builder(KeySize keySize){
+            if(keySize == null){
+                throw new IllegalArgumentException("KeySize cannot be null");
+            }
             this.keySize = keySize.getValue();
         }
 
@@ -158,6 +174,9 @@ public class PBKDF2Helper {
          * @throws IllegalArgumentException if configurations are invalid
          */
         public Builder(String pbkdf2Configurations){
+            if(pbkdf2Configurations == null){
+                throw new IllegalArgumentException("Configurations cannot be null");
+            }
             String[] parts = pbkdf2Configurations.split(":");
             if(parts.length != 4){
                 throw new IllegalArgumentException("Malformed Configurations");
@@ -168,7 +187,7 @@ public class PBKDF2Helper {
                 this.saltSize = Integer.parseInt(parts[1]);
                 this.iterations = Integer.parseInt(parts[2]);
                 this.salt = new BigInteger(parts[3], 16).toByteArray();
-            }catch (NumberFormatException e){
+            }catch(NumberFormatException e){
                 throw new IllegalArgumentException("Malformed Configurations");
             }
         }
@@ -178,6 +197,9 @@ public class PBKDF2Helper {
          * @return The modified builder instance
          */
         public Builder saltSize(SaltSize saltSize){
+            if(saltSize == null){
+                throw new IllegalArgumentException("SaltSize cannot be null");
+            }
             this.saltSize = saltSize.getValue();
             return this;
         }
@@ -187,6 +209,9 @@ public class PBKDF2Helper {
          * @return The modified builder instance
          */
         public Builder iterations(Iterations iterations){
+            if(iterations == null){
+                throw new IllegalArgumentException("Iterations cannot be null");
+            }
             this.iterations = iterations.getValue();
             return this;
         }
@@ -197,7 +222,7 @@ public class PBKDF2Helper {
          */
         public PBKDF2Helper build(){
             if(this.salt == null){
-                return new PBKDF2Helper(this.keySize, this.iterations, this.saltSize);
+                return new PBKDF2Helper(this.keySize, this.saltSize, this.iterations);
             }else{
                 return new PBKDF2Helper(this.keySize, this.iterations, this.salt);
             }

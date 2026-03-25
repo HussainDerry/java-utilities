@@ -27,7 +27,7 @@ import static com.github.hussainderry.utils.ImageCompressionUtils.compressImage;
  * The default compressed image quality is 0.5
  * @author Hussain Al-Derry
  */
-public class ImageCompressor {
+public final class ImageCompressor {
 
     private static final String ILLEGAL_COMPRESSED_IMAGE_QUALITY = "Illegal compressed image quality (quality must be >= 0 and <= 1)";
     private static final String NULL_BYTES = "Data cannot be null";
@@ -65,17 +65,16 @@ public class ImageCompressor {
      * @throws IllegalArgumentException if the image bytes are null
      */
     public ImageCompressor setSourceImage(final byte[] imageBytes){
-        mReadWriteLock.readLock().lock();
-        if(imageBytes != null){
-            mReadWriteLock.readLock().unlock();
-            mReadWriteLock.writeLock().lock();
-            mImageBytes = Arrays.copyOf(imageBytes, imageBytes.length);
-            mReadWriteLock.writeLock().unlock();
-            return this;
-        }else{
-            mReadWriteLock.readLock().unlock();
+        if(imageBytes == null){
             throw new IllegalArgumentException(NULL_BYTES);
         }
+        mReadWriteLock.writeLock().lock();
+        try{
+            mImageBytes = Arrays.copyOf(imageBytes, imageBytes.length);
+        }finally{
+            mReadWriteLock.writeLock().unlock();
+        }
+        return this;
     }
 
     /**
@@ -85,17 +84,16 @@ public class ImageCompressor {
      * @throws IllegalArgumentException if the image bytes are null or is not a valid Base64 string
      */
     public ImageCompressor setSourceImage(final String imageBase64){
-        mReadWriteLock.readLock().lock();
-        if(imageBase64 != null){
-            mReadWriteLock.readLock().unlock();
-            mReadWriteLock.writeLock().lock();
-            mImageBytes = mDecoder.decode(imageBase64);
-            mReadWriteLock.writeLock().unlock();
-            return this;
-        }else{
-            mReadWriteLock.readLock().unlock();
+        if(imageBase64 == null){
             throw new IllegalArgumentException(NULL_BYTES);
         }
+        mReadWriteLock.writeLock().lock();
+        try{
+            mImageBytes = mDecoder.decode(imageBase64);
+        }finally{
+            mReadWriteLock.writeLock().unlock();
+        }
+        return this;
     }
 
     /**
@@ -114,14 +112,15 @@ public class ImageCompressor {
      */
     public byte[] compressImageToByteArray(){
         mReadWriteLock.readLock().lock();
-        final byte[] compressed = compressImage(mImageBytes, quality);
-        mReadWriteLock.readLock().unlock();
-        return compressed;
+        try{
+            return compressImage(mImageBytes, quality);
+        }finally{
+            mReadWriteLock.readLock().unlock();
+        }
     }
 
     private static boolean isValidImageQuality(float ratio){
         return ratio >= 0 && ratio <= 1;
     }
-
 
 }
